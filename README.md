@@ -174,10 +174,10 @@ oc wait -n istio-system --for=condition=Successful OSSMConsole ossmconsole --tim
 1. Enable User Monitoring with OpenShift Observability (Prometheus).
 2. Enable SystemMonitor in the istio-system namespace.
 3. Enable PodMonitor in all Istio-related namespaces as well as application namespaces:
-istio-system
-istio-ingress
-bookinfo
-rest-api-with-mesh
+   3a. istio-system
+   3b. istio-ingress
+   3c. bookinfo
+   3d. rest-api-with-mesh
 4. Label all Istio-related and application namespaces with istio-injection=enabled.
 
 Set up OCP user monitoring workflow
