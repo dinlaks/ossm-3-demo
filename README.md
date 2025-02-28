@@ -43,13 +43,28 @@ To skip all the following steps and set everything up automatically (e.g., for d
 ## Steps
 All required YAML resources are in the `./resources` folder.
 For a more detailed description about what is set and why, see OpenShift Service Mesh documentation.
-  
+
+## Demo Setup Plan
+In this demo, I m going to walkthrough how the OSSM 3 is configured and managed finally with examples showcasing the service mesh management:
+
+## Install the following OpenShift Operators:
+1. OpenShift Service Mesh 3 (Tech Preview)
+2. Kiali
+3. OpenTelemetry
+4. Tempo
+
+## Enable Gateway API  
 Enable Gateway API  (only if you did not run the `./install_operators.sh` script)
 ------------  
 ```bash
 oc get crd gateways.gateway.networking.k8s.io &> /dev/null ||  { oc kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v1.0.0" | oc apply -f -; }
 ```
 
+## Implement an OpenShift Service Mesh solution:
+Provision and configure OpenShift Service Mesh control plane and other Istio supporting components (CRs and namespaces):
+Istio (istiod)
+Istio-CNI (pod networking)
+Ingress-Gateway (for Gateway API and Istio Gateway)
 
 Set up OSSM3
 ------------
@@ -62,15 +77,6 @@ First, install Istio custom resource
 oc apply -f ./resources/OSSM3/istiocr.yaml  -n istio-system
 oc wait --for condition=Ready istio/default --timeout 60s  -n istio-system
 ```
-Then, set up Telemetry resource to enable tracers defined in Istio custom resource
-```bash
-oc apply -f ./resources/TempoOtel/istioTelemetry.yaml  -n istio-system
-```
-The opentelemetrycollector namespace needs to be added as a member of the mesh
-```bash
-oc label namespace opentelemetrycollector istio-injection=enabled
-```
-> **_NOTE:_** `istio-injection=enabled` label works only when the name of Istio CR is `default`. If you use a different name as `default`, you need to use `istio.io/rev=<istioCR_NAME>` label instead of `istio-injection=enabled` in the all next steps of this example. Also, you will need to update values `config_map_name`, `istio_sidecar_injector_config_map_name`, `istiod_deployment_name`, `url_service_version` in the Kiali CR.
 
 Then, install IstioCNI
 > **_NOTE:_**  In this example, the `.spec.version` is missing so the istio version is automatically set by OSSM operator. the `.spec.version` is missing so the istio version is automatically set by OSSM operator. You can specify the version manually, but it must be one that is supported by the operator.
@@ -97,8 +103,13 @@ Set up the ingress gateway via Gateway API (this will live next to the previousl
 oc apply -k ./resources/gateway
 ```
 
-
-Set up Tempo and OpenTelemetryCollector  
+## Set up Tempo and OpenTelemetryCollector  
+Provision and configure a tracing-system via a TempoStack for distributed tracing:
+MinIO for persistent S3 storage
+Tempo
+OpenTelemetry CRs:
+OpenTelemetryCollector
+Telemetry
 ------------  
 ```bash
 oc new-project tracing-system
@@ -124,8 +135,17 @@ oc new-project opentelemetrycollector
 oc apply -f ./resources/TempoOtel/opentelemetrycollector.yaml -n opentelemetrycollector
 oc wait --for condition=Available deployment/otel-collector --timeout 60s -n opentelemetrycollector
 ```
+Then, set up Telemetry resource to enable tracers defined in Istio custom resource
+```bash
+oc apply -f ./resources/TempoOtel/istioTelemetry.yaml  -n istio-system
+```
+The opentelemetrycollector namespace needs to be added as a member of the mesh
+```bash
+oc label namespace opentelemetrycollector istio-injection=enabled
+```
+> **_NOTE:_** `istio-injection=enabled` label works only when the name of Istio CR is `default`. If you use a different name as `default`, you need to use `istio.io/rev=<istioCR_NAME>` label instead of `istio-injection=enabled` in the all next steps of this example. Also, you will need to update values `config_map_name`, `istio_sidecar_injector_config_map_name`, `istiod_deployment_name`, `url_service_version` in the Kiali CR.
 
-Set up Kiali
+## Set up Kiali & OpenShift Service Mesh Console Plugin
 ------------
 Create cluster role binding for kiali to be able to read ocp monitoring
 ```bash
@@ -149,6 +169,15 @@ oc apply -f ./resources/Kiali/kialiOssmcCr.yaml -n istio-system
 oc wait -n istio-system --for=condition=Successful OSSMConsole ossmconsole --timeout 120s
 ```
 
+## Monitoring Configuration:
+Enable User Monitoring with OpenShift Observability (Prometheus).
+Enable SystemMonitor in the istio-system namespace.
+Enable PodMonitor in all Istio-related namespaces as well as application namespaces:
+istio-system
+istio-ingress
+bookinfo
+rest-api-with-mesh
+Label all Istio-related and application namespaces with istio-injection=enabled.
 
 Set up OCP user monitoring workflow
 ------------
@@ -163,6 +192,8 @@ oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-system
 oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-ingress
 ```
 
+# Sample Applications for Demo and Use Cases:
+## bookinfo: A sample multi-service application to demonstrate OSSM observability.
 
 Set up BookInfo
 ------------
@@ -190,7 +221,10 @@ export INGRESSHOST=$(oc get route istio-ingressgateway -n istio-ingress -o=jsonp
 cat ./resources/Bookinfo/traffic-generator-configmap.yaml | ROUTE="http://${INGRESSHOST}/productpage" envsubst | oc -n bookinfo apply -f - 
 oc apply -f ./resources/Bookinfo/traffic-generator.yaml -n bookinfo
 ```
-  
+
+
+## rest-api-with-mesh: A simple RestAPI application containing a front-end API that calls our back-end API, deployed via Canary deployment.
+
 Set up sample RestAPI    
 ------------  
 
@@ -199,6 +233,7 @@ Install the sample RestAPI `hello-service` via Kustomize
 oc apply -k ./resources/application/kustomize/overlays/pod 
 ```
 
+## Validation
 Test that everything works correctly
 ------------
 Now, everything should be set.  
