@@ -61,10 +61,10 @@ oc get crd gateways.gateway.networking.k8s.io &> /dev/null ||  { oc kustomize "g
 ```
 
 ## Implement an OpenShift Service Mesh solution:
-Provision and configure OpenShift Service Mesh control plane and other Istio supporting components (CRs and namespaces):
-Istio (istiod)
-Istio-CNI (pod networking)
-Ingress-Gateway (for Gateway API and Istio Gateway)
+1. Provision and configure OpenShift Service Mesh control plane and other Istio supporting components (CRs and namespaces):
+2. Istio (istiod)
+3. Istio-CNI (pod networking)
+4. Ingress-Gateway (for Gateway API and Istio Gateway)
 
 Set up OSSM3
 ------------
