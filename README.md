@@ -54,6 +54,15 @@ In this demo, I m going to walkthrough how the OSSM 3 is configured and managed 
 4. Tempo
 
 ## Enable Gateway API  
+Istio includes support for Kubernetes Gateway API and intends to make it the default API for traffic management in the future. 
+Gateway API is Kubernetes’ next generation standard for service networking. 
+A more flexible API than Kubernetes Ingress that includes service mesh features such as traffic management.
+Provide consistent APIs across Kubernetes Ingress and Service Mesh
+Istio APIs will continue to be supported
+
+Its a gateway controller similar to Istio API provides. But, offers more rich features supporting both L4 and L7 protocols. Overall, Gateways define a whole new way of declaring and managing traffic targeting Kubernetes services that avoids the limitations teams experience using only Ingress resources. The Gateway API creates a standardized model for enabling features like L4 support, advanced HTTP routing, and built-in traffic management in a portable fashion across all compliant gateway controllers. This will prevent vendor lock-in and give developers expanded declarative management without having to touch low-level controller configurations.  
+
+
 Enable Gateway API  (only if you did not run the `./install_operators.sh` script)
 ------------  
 ```bash
