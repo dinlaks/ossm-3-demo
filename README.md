@@ -53,16 +53,21 @@ In this demo, I m going to walkthrough how the OSSM 3 is configured and managed 
 3. OpenTelemetry
 4. Tempo
 
-## Enable Gateway API  
-Istio includes support for Kubernetes Gateway API and intends to make it the default API for traffic management in the future. 
-Gateway API is Kubernetes’ next generation standard for service networking. 
-A more flexible API than Kubernetes Ingress that includes service mesh features such as traffic management.
-Provide consistent APIs across Kubernetes Ingress and Service Mesh
-Istio APIs will continue to be supported
+
+## Gateways 
+The Sail Operator does not deploy Ingress or Egress Gateways. Gateways are not part of the control plane. As a security best-practice, Ingress and Egress Gateways should be deployed in a different namespace than the namespace that contains the control plane.
+
+You can deploy gateways using either the Gateway API(TP) or Gateway Injection methods.
+
+### Option 1: Istio Gateway Injection
+Gateway Injection uses the same mechanisms as Istio sidecar injection to create a gateway from a Deployment resource that is paired with a Service resource that can be made accessible from outside the cluster. For more information, see Installing Gateways. We will use this method for the ```bookinfo``` application later.  
+
+### Option 2: Kubernetes Gateway API
+Istio includes support for Kubernetes Gateway API and intends to make it the default API for traffic management in the future. For more information, see Istio's Kubernetes Gateway API page. Istio includes support for Kubernetes Gateway API and intends to make it the default API for traffic management in the future. Gateway API is Kubernetes’ next generation standard for service networking. A more flexible API than Kubernetes Ingress that includes service mesh features such as traffic management. Provide consistent APIs across Kubernetes Ingress and Service Mesh. Istio APIs will continue to be supported.
 
 Its a gateway controller similar to Istio API provides. But, offers more rich features supporting both L4 and L7 protocols. Overall, Gateways define a whole new way of declaring and managing traffic targeting Kubernetes services that avoids the limitations teams experience using only Ingress resources. The Gateway API creates a standardized model for enabling features like L4 support, advanced HTTP routing, and built-in traffic management in a portable fashion across all compliant gateway controllers. This will prevent vendor lock-in and give developers expanded declarative management without having to touch low-level controller configurations.  
 
-
+## Enable Gateway API (Kubernetes Gateway API CRDs are not available by default and must be enabled to be used) 
 Enable Gateway API  (only if you did not run the `./install_operators.sh` script)
 ------------  
 ```bash
