@@ -171,14 +171,14 @@ oc wait -n istio-system --for=condition=Successful OSSMConsole ossmconsole --tim
 ```
 
 ## Monitoring Configuration:
-Enable User Monitoring with OpenShift Observability (Prometheus).
-Enable SystemMonitor in the istio-system namespace.
-Enable PodMonitor in all Istio-related namespaces as well as application namespaces:
+1. Enable User Monitoring with OpenShift Observability (Prometheus).
+2. Enable SystemMonitor in the istio-system namespace.
+3. Enable PodMonitor in all Istio-related namespaces as well as application namespaces:
 istio-system
 istio-ingress
 bookinfo
 rest-api-with-mesh
-Label all Istio-related and application namespaces with istio-injection=enabled.
+4. Label all Istio-related and application namespaces with istio-injection=enabled.
 
 Set up OCP user monitoring workflow
 ------------
@@ -224,7 +224,7 @@ oc apply -f ./resources/Bookinfo/traffic-generator.yaml -n bookinfo
 ```
 
 
-### rest-api-with-mesh: 
+## rest-api-with-mesh: 
 A simple RestAPI application containing a front-end API that calls our back-end API, deployed via Canary deployment.
 
 Set up sample RestAPI    
