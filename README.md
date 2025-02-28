@@ -50,32 +50,6 @@ Enable Gateway API  (only if you did not run the `./install_operators.sh` script
 oc get crd gateways.gateway.networking.k8s.io &> /dev/null ||  { oc kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v1.0.0" | oc apply -f -; }
 ```
 
-Set up Tempo and OpenTelemetryCollector  
-------------  
-```bash
-oc new-project tracing-system
-```
-First, set up MiniO storage which is used by Tempo to store data (or you can use S3 storage, see Tempo documentation)
-```bash
-oc apply -f ./resources/TempoOtel/minio.yaml -n tracing-system
-oc wait --for condition=Available deployment/minio --timeout 150s -n tracing-system
-```
-Then, set up Tempo CR
-```bash
-oc apply -f ./resources/TempoOtel/tempo.yaml -n tracing-system
-oc wait --for condition=Ready TempoStack/sample --timeout 150s -n tracing-system
-oc wait --for condition=Available deployment/tempo-sample-compactor --timeout 150s -n tracing-system
-```
-Expose Jaeger UI route which will be used in the Kiali CR later
-```bash
-oc expose svc tempo-sample-query-frontend --port=jaeger-ui --name=tracing-ui -n tracing-system
-```
-Next, set up OpenTelemetryCollector
-```bash
-oc new-project opentelemetrycollector
-oc apply -f ./resources/TempoOtel/opentelemetrycollector.yaml -n opentelemetrycollector
-oc wait --for condition=Available deployment/otel-collector --timeout 60s -n opentelemetrycollector
-```
 
 Set up OSSM3
 ------------
@@ -123,17 +97,32 @@ Set up the ingress gateway via Gateway API (this will live next to the previousl
 oc apply -k ./resources/gateway
 ```
 
-Set up OCP user monitoring workflow
-------------
-First, OCP user monitoring needs to be enabled
+
+Set up Tempo and OpenTelemetryCollector  
+------------  
 ```bash
-oc apply -f ./resources/Monitoring/ocpUserMonitoring.yaml
+oc new-project tracing-system
 ```
-Then, create service monitor and pod monitor for istio namespaces
+First, set up MiniO storage which is used by Tempo to store data (or you can use S3 storage, see Tempo documentation)
 ```bash
-oc apply -f ./resources/Monitoring/serviceMonitor.yaml -n istio-system
-oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-system
-oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-ingress
+oc apply -f ./resources/TempoOtel/minio.yaml -n tracing-system
+oc wait --for condition=Available deployment/minio --timeout 150s -n tracing-system
+```
+Then, set up Tempo CR
+```bash
+oc apply -f ./resources/TempoOtel/tempo.yaml -n tracing-system
+oc wait --for condition=Ready TempoStack/sample --timeout 150s -n tracing-system
+oc wait --for condition=Available deployment/tempo-sample-compactor --timeout 150s -n tracing-system
+```
+Expose Jaeger UI route which will be used in the Kiali CR later
+```bash
+oc expose svc tempo-sample-query-frontend --port=jaeger-ui --name=tracing-ui -n tracing-system
+```
+Next, set up OpenTelemetryCollector
+```bash
+oc new-project opentelemetrycollector
+oc apply -f ./resources/TempoOtel/opentelemetrycollector.yaml -n opentelemetrycollector
+oc wait --for condition=Available deployment/otel-collector --timeout 60s -n opentelemetrycollector
 ```
 
 Set up Kiali
@@ -159,6 +148,21 @@ Optionally, OSSMC plugin can be installed as well
 oc apply -f ./resources/Kiali/kialiOssmcCr.yaml -n istio-system
 oc wait -n istio-system --for=condition=Successful OSSMConsole ossmconsole --timeout 120s
 ```
+
+
+Set up OCP user monitoring workflow
+------------
+First, OCP user monitoring needs to be enabled
+```bash
+oc apply -f ./resources/Monitoring/ocpUserMonitoring.yaml
+```
+Then, create service monitor and pod monitor for istio namespaces
+```bash
+oc apply -f ./resources/Monitoring/serviceMonitor.yaml -n istio-system
+oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-system
+oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-ingress
+```
+
 
 Set up BookInfo
 ------------
