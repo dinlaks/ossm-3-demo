@@ -193,8 +193,8 @@ oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-system
 oc apply -f ./resources/Monitoring/podMonitor.yaml -n istio-ingress
 ```
 
-# Sample Applications for Demo and Use Cases:
-## bookinfo: A sample multi-service application to demonstrate OSSM observability.
+## Sample Applications for Demo and Use Cases:
+### bookinfo: A sample multi-service application to demonstrate OSSM observability.
 
 Set up BookInfo
 ------------
@@ -224,7 +224,7 @@ oc apply -f ./resources/Bookinfo/traffic-generator.yaml -n bookinfo
 ```
 
 
-## rest-api-with-mesh: A simple RestAPI application containing a front-end API that calls our back-end API, deployed via Canary deployment.
+### rest-api-with-mesh: A simple RestAPI application containing a front-end API that calls our back-end API, deployed via Canary deployment.
 
 Set up sample RestAPI    
 ------------  
