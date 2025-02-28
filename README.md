@@ -224,7 +224,8 @@ oc apply -f ./resources/Bookinfo/traffic-generator.yaml -n bookinfo
 ```
 
 
-### rest-api-with-mesh: A simple RestAPI application containing a front-end API that calls our back-end API, deployed via Canary deployment.
+### rest-api-with-mesh: 
+A simple RestAPI application containing a front-end API that calls our back-end API, deployed via Canary deployment.
 
 Set up sample RestAPI    
 ------------  
