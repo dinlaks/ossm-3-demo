@@ -65,10 +65,12 @@ Gateway Injection uses the same mechanisms as Istio sidecar injection to create 
 ### Option 2: Kubernetes Gateway API
 Istio includes support for Kubernetes Gateway API and intends to make it the default API for traffic management in the future. For more information, see Istio's Kubernetes Gateway API page. Istio includes support for Kubernetes Gateway API and intends to make it the default API for traffic management in the future. Gateway API is Kubernetes’ next generation standard for service networking. A more flexible API than Kubernetes Ingress that includes service mesh features such as traffic management. Provide consistent APIs across Kubernetes Ingress and Service Mesh. Istio APIs will continue to be supported.
 
-Its a gateway controller similar to Istio API provides. But, offers more rich features supporting both L4 and L7 protocols. Overall, Gateways define a whole new way of declaring and managing traffic targeting Kubernetes services that avoids the limitations teams experience using only Ingress resources. The Gateway API creates a standardized model for enabling features like L4 support, advanced HTTP routing, and built-in traffic management in a portable fashion across all compliant gateway controllers. This will prevent vendor lock-in and give developers expanded declarative management without having to touch low-level controller configurations.  
+Its a gateway controller similar to Istio API provides. But, offers more rich features supporting both L4 and L7 protocols. Overall, Gateways define a whole new way of declaring and managing traffic targeting Kubernetes services that avoids the limitations teams experience using only Ingress resources. The Gateway API creates a standardized model for enabling features like L4 support, advanced HTTP routing, and built-in traffic management in a portable fashion across all compliant gateway controllers. This will prevent vendor lock-in and give developers expanded declarative management without having to touch low-level controller configurations.
 
-## Enable Gateway API (Kubernetes Gateway API CRDs are not available by default and must be enabled to be used) 
-Enable Gateway API  (only if you did not run the `./install_operators.sh` script)
+We will use this method for rest-api-mesh app demo
+
+### Enable Gateway API (Kubernetes Gateway API CRDs are not available by default and must be enabled to be used) 
+### Enable Gateway API  (only if you did not run the `./install_operators.sh` script)
 ------------  
 ```bash
 oc get crd gateways.gateway.networking.k8s.io &> /dev/null ||  { oc kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v1.0.0" | oc apply -f -; }
