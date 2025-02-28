@@ -105,10 +105,11 @@ oc apply -k ./resources/gateway
 
 ## Set up Tempo and OpenTelemetryCollector  
 Provision and configure a tracing-system via a TempoStack for distributed tracing:
-MinIO for persistent S3 storage
-Tempo
-OpenTelemetry CRs:
-OpenTelemetryCollector
+1. MinIO for persistent S3 storage
+2. Tempo
+3. OpenTelemetry CRs:
+4. OpenTelemetryCollector
+
 Telemetry
 ------------  
 ```bash
