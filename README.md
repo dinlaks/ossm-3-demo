@@ -65,9 +65,9 @@ Gateway Injection uses the same mechanisms as Istio sidecar injection to create 
 The istio-ingressgateway is a gateway deployment that manages external traffic into the Istio mesh, functioning as a Kubernetes Gateway or Ingress Gateway. It uses an Envoy proxy to route requests to appropriate services within the mesh.
 
 Role in Istio:
-This deployment serves as an entry point for external traffic into the service mesh.
-It routes requests to internal services based on VirtualService and Gateway configurations.
-It supports load balancing, TLS termination, and traffic routing rules.
+1. This deployment serves as an entry point for external traffic into the service mesh.
+2. It routes requests to internal services based on VirtualService and Gateway configurations.
+3. It supports load balancing, TLS termination, and traffic routing rules.
 
 The Gateway resource (bookinfo-gateway) serves as a configuration for traffic routing rules, and it targets the ingress-gateway (istio-ingressgateway deployment) by matching the label istio: ingressgateway. The ingress-gateway deployment acts as the entry point into the Istio service mesh, applying these routing rules and forwarding traffic to services within the mesh.
 
