@@ -60,7 +60,18 @@ The Sail Operator does not deploy Ingress or Egress Gateways. Gateways are not p
 You can deploy gateways using either the Gateway API(TP) or Gateway Injection methods.
 
 ### Option 1: Istio Gateway Injection
-Gateway Injection uses the same mechanisms as Istio sidecar injection to create a gateway from a Deployment resource that is paired with a Service resource that can be made accessible from outside the cluster. For more information, see Installing Gateways. We will use this method for the ```bookinfo``` application later.  
+Gateway Injection uses the same mechanisms as Istio sidecar injection to create a gateway from a Deployment resource that is paired with a Service resource that can be made accessible from outside the cluster. For more information, see Installing Gateways. We will use this method for the ```bookinfo``` application later. 
+
+The istio-ingressgateway is a gateway deployment that manages external traffic into the Istio mesh, functioning as a Kubernetes Gateway or Ingress Gateway. It uses an Envoy proxy to route requests to appropriate services within the mesh.
+
+Role in Istio:
+This deployment serves as an entry point for external traffic into the service mesh.
+It routes requests to internal services based on VirtualService and Gateway configurations.
+It supports load balancing, TLS termination, and traffic routing rules.
+
+The Gateway resource (bookinfo-gateway) serves as a configuration for traffic routing rules, and it targets the ingress-gateway (istio-ingressgateway deployment) by matching the label istio: ingressgateway. The ingress-gateway deployment acts as the entry point into the Istio service mesh, applying these routing rules and forwarding traffic to services within the mesh.
+
+This separation of control plane configuration (Gateway resource) and data plane traffic handling (ingress-gateway) allows for flexibility, scalability, and Kubernetes-native traffic management.  
 
 ### Option 2: Kubernetes Gateway API
 Istio includes support for Kubernetes Gateway API and intends to make it the default API for traffic management in the future. Gateway API is Kubernetes’ next generation standard for service networking. A more flexible API than Kubernetes Ingress that includes service mesh features such as traffic management. Provide consistent APIs across Kubernetes Ingress and Service Mesh. Istio APIs will continue to be supported.
