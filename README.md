@@ -250,9 +250,88 @@ cat ./resources/Bookinfo/traffic-generator-configmap.yaml | ROUTE="http://${INGR
 oc apply -f ./resources/Bookinfo/traffic-generator.yaml -n bookinfo
 ```
 
+The output of oc get pods -n bookinfo shows that the Bookinfo application is running in the bookinfo namespace with multiple services and versions. The key observation here is that each pod has 2/2 containers running, indicating that Istio sidecar injection is enabled in this namespace.
 
-## rest-api-with-mesh: 
+```bash
+oc get pods -n bookinfo
+
+NAME                             READY   STATUS    RESTARTS   AGE
+details-v1-65cfcf56f9-hfl47      2/2     Running   2          26h
+kiali-traffic-generator-hv595    2/2     Running   2          26h
+productpage-v1-d5789fdfb-6gs76   2/2     Running   2          26h
+ratings-v1-7c9bd4b87f-8979h      2/2     Running   2          26h
+reviews-v1-6584ddcf65-45q2k      2/2     Running   2          26h
+reviews-v2-6f85cb9b7c-rr7kc      2/2     Running   2          26h
+reviews-v3-6f5b775685-8mfwj      2/2     Running   2          26h
+```
+
+To get more information about the containers with in a pod, use the oc describe pod <pod name> and look in the Containers section:
+
+Example:
+```bash
+oc describe pod productpage-v1-d5789fdfb-6gs7 -n bookinfo
+
+Name:             productpage-v1-d5789fdfb-6gs76
+Namespace:        bookinfo
+...
+Containers:
+  productpage:
+    Container ID: ...
+    ...
+  istio-proxy:
+    Container ID:...
+    ...
+...
+```
+
+### Show OpenShift Web Console of a BookInfo App in developer view 
+From the OpenShift web console, when looking at the topology of the bookinfo namespace, we see a number of deployments. But we really cannot see how these services interact with one another.
+
+### Kiali Console View
+We can get a better view of how our services are interacting with one another when we use the Istio observability tool Kiali.
+To obtain the Kiali URL, you can run the following commands:
+```bash
+export KIALI_HOST=$(oc get route kiali -n istio-system -o=jsonpath='{.spec.host}')
+echo https://KIALI_HOST
+```
+
+### Kiali Overview Tab
+When you initially log into the Kiali web console, you will be brought to the Overview page. This is a dashboard of all non-default projects in your cluster.
+Here we can see some inbound traffic in this namespace. That is becuase we deployed a kiali-traffic-generator pod to coninuously call this application.
+
+### Kiali - Traffic Graph Tab
+1. To get more ganularity on this triffic, click the three dot "kebab" menu on the bookinfo tile and select the Graph option
+2. Now we can see a graphical representation of the traffic in our service mesh-enabled application. You may need to resize your screen to see the details of each bookinfo service.
+3. To display more metrics on the graph, use the drop-down Display menu, and check some of the metrics you want to see. Feel free to experiment.
+4. Change the graph type to Versioned app graph to see how traffic is being disributed between the different versions of the reviews service.
+   
+This is just a sample of the observability data we can easily interpret in the Kiali graph view. We will closer look into some of the other Kiali menu items in the next few sections.
+
+### Kiali - Applications Tab
+The Applications view allows us to drill down into each of the services that make up the bookinfo application, and allows us get an overview and metrics of a particular service
+
+### Kiali - Workload Tab
+The Workloads view allows you to explore even further into each pod workload, and view similar information around metrics, as well as envoy proxy status and logs.
+
+### Kiali - Services Tab
+The Services view allows you to view by kubernetes Services. Note that the front end service productpage is also associated with a VirtualService and Gateway as indicated in the Details column.
+
+### Kiali - Istio Config Tab
+The Istio Config view allows us to view and modify the configuration of Istio specific resources.
+
+### Kiali - Mesh Tab
+The Mesh view provides a high level view of the entire service mesh: istio-system (control plane), tracing-system (distributed tracing components), Data Plane (application namespaces), and External resources, such as Prometheus monitoring.
+
+### Tempo - Distributed Tracing 
+The Distributed Tracing option opens up a new window (Jaeger Console). Distributed Tracing is actually handled separatly from Kiali via Tempo, and is viewable with the Jaeger web console.
+
+
+
+## Exploring the RestAPI Applicaiton (rest-api-with-mesh using Gateway API: 
 A simple RestAPI application containing a front-end API that calls our back-end API, deployed via Canary deployment.
+
+In this section we will explore the our hello-rest application, which is the application we will be using to perform our canary deployment from v1 to v2 of our backend service
+This application uses the Kuberntetes Gateway API resource for ingress.
 
 Set up sample RestAPI    
 ------------  
@@ -261,6 +340,146 @@ Install the sample RestAPI `hello-service` via Kustomize
 ```bash
 oc apply -k ./resources/application/kustomize/overlays/pod 
 ```
+
+You can access the front end of the RestAPI using the Ingress route shown at the end of the demo install script, or run the command:
+```bash
+export GATEWAY=$(oc get gateway hello-gateway -n istio-ingress -o template --template='{{(index .status.addresses 0).value}}')
+
+curl -s $GATEWAY/hello
+curl -s $GATEWAY/hello-service
+```
+
+curl -s $GATEWAY/hello returns output from the front-end service. `curl -s $GATEWAY/hello-service uses the front-end service to return output from the back-end service.
+
+Before we continue, be sure to run the script
+```bash
+sh scripts/generate-traffic.sh
+```
+
+GATEWAY is the URL provided by the Gateway API hello-gateway gateway which is deployed in the istio-ingress namespace.
+
+Gateway API uses the GatewayClass type istio, so it requires OpenShift Service Mesh: 
+GatewayClass
+```bash
+oc get gatewayclass istio -o yaml
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: istio
+spec:
+  controllerName: istio.io/gateway-controller
+  description: The default Istio GatewayClass
+```
+
+Gateway
+```bash
+oc get gateway -n istio-ingress hello-gateway -o yaml
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  labels:
+    app: hello-gateway
+    version: v1
+  name: hello-gateway
+  namespace: istio-ingress
+spec:
+  gatewayClassName: istio
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: All
+    name: http
+    port: 80
+```
+
+As you can see, this is much cleaner than the the gateway deployment used for the bookinfo application.
+
+We are using the Gateway API HTTPRoute to associate the front-end service with the Gateway
+```bash
+oc get httproute web-front-end-route -n rest-api-with-mesh -o yaml
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: web-front-end-route
+  namespace: rest-api-with-mesh
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway # <<<< Gateway to refrerence
+    name: hello-gateway
+    namespace: istio-ingress
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service # <<<< Service of the web-front-end pod
+      name: web-front-end
+      port: 8080
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+```
+
+### Kiali view via Openshift service mesh console plugin
+1. This time, instead of using the Kiali Web Consle, we will observe our service mesh with the OpenShift Service Mesh plugin, which is included with Kiali.
+2. In the Administrator view in the OpenShift Web Console, on the left hand menu, scroll down and select Service Mesh → Traffic Graph.
+3. With sh scripts/generate-traffic.sh continuing to run in a terminal, go to the Traffic Graph Kiali menu and select the rest-api-with-mesh namespace.
+
+For the Display options, select:
+1. Traffic Distribution
+2. Idle Nodes
+3. Security
+4. Traffic Animation (optional, but helpful)
+
+1. Now we can clearly see the flow of traffic through the Gateway to our backend service, and as we can also observe, all traffic is being routed to v1 of service-b.
+2. Keep this browser window open while sh scripts/generate-traffic.sh continues to run in a terminal for the next section.
+3. Also set the replay to 1 minute and refresh every 10 seconds. This will give us a view of our Kiali traffic in slight-delayed "real-time".
+
+### Perform Canary deployment using service mesh
+A canary deployment is a strategy where a team releases a new version of their application to a small percentage of the production traffic.
+In OpenShift Service Mesh, a canary deployment can be implemented using the VirtualService resource. A VirtualService allows you to define traffic routing rules for your services, enabling granular control over how requests are distributed between different versions of an application.
+
+Here’s how a canary deployment works with a VirtualService in OpenShift Service Mesh:
+
+1. Deploy Multiple Versions of Your Application
+2. Ensure the new version of your application is deployed alongside the current version.
+3. For example, deploy service-b-v1 and service-b-v2 as separate deployments in OpenShift.
+4. Define a VirtualService
+5. A VirtualService is created to control how traffic is routed between v1 and v2 of the service-b` service. The traffic split is defined using weights for each version.
+
+Here’s an example of a VirtualService that implements a canary deployment for the service-b` service:
+```bash
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: service-b
+  namespace: rest-api-with-mesh
+spec:
+  hosts:
+  - service-b
+  http:
+  - route:
+    - destination:
+        host: service-b
+        port:
+          number: 8080
+        subset: v1
+      weight: 100
+    - destination:
+        host: service-b
+        port:
+          number: 8080
+        subset: v2
+      weight: 0
+```
+
+In it’s current state, the VirtualService is has a weight of 100% routing traffic to v1 and 0% to v2. We will use our deployment script to change these weights in small increments until traffic is weighted at 100% to v2
+   
+###################################################################################################
 
 ## Validation
 Test that everything works correctly
